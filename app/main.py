@@ -1,10 +1,15 @@
-from fastapi import FastAPI, HTTPException, status, Response
+from fastapi import FastAPI, HTTPException, status, Response, Depends
 from pydantic import BaseModel, HttpUrl
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
+from . import models
+from . database import engine, get_db
+from sqlalchemy.orm import Session
 
 app = FastAPI()
+
+models.Base.metadata.create_all(bind=engine)
 
 # Connect to database
 while True:
@@ -27,6 +32,10 @@ class Course(BaseModel):
     website:HttpUrl
 
 # Define routes and functions for the API
+@app.get("/course")
+def course(db: Session = Depends(get_db)):
+    return {"status":"SQLAlchemy is Working"}
+
 @app.post("/")
 def create_post(body:Course):
     cursor.execute("""INSERT INTO course (name, instructor, duration, website) VALUES (%s, %s, %s, %s) RETURNING *""", (body.name, body.instructor, body.duration, str(body.website)))
