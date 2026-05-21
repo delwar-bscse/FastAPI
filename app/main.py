@@ -1,11 +1,11 @@
 from fastapi import FastAPI, HTTPException, status, Response, Depends, HTTPException
-from pydantic import BaseModel, HttpUrl
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
-from . import models
+from . import models, schemas
 from . database import engine, get_db
 from sqlalchemy.orm import Session
+from typing import List
 
 app = FastAPI()
 
@@ -23,33 +23,29 @@ while True:
         print("Error: ", error)
         time.sleep(3)
 
-# Define request body schema.
-class Course(BaseModel):
-    name:str
-    instructor:str
-    duration:float
-    website:HttpUrl
+
 
 # Define routes and functions for the API
-@app.post("/")
-def create_course(body:Course, db: Session = Depends(get_db)):
-    new_course = models.Course(name=body.name, instructor=body.instructor, duration=body.duration, website=str(body.website))
+@app.post("/", response_model=schemas.CourseResponse)
+def create_course(body:schemas.CourseCreate, db: Session = Depends(get_db)):
+    new_course = models.Course(**body.model_dump())
+    new_course.website = str(body.website)
     db.add(new_course)
     db.commit()
     db.refresh(new_course)
-    return {"data": new_course}
+    return new_course
 
-@app.get("/")
+@app.get("/", response_model=list[schemas.CourseResponse])
 def get_courses(db: Session = Depends(get_db)):
     courses = db.query(models.Course).all()
-    return {"Courses": courses}
+    return courses
 
-@app.get("/{id}")
+@app.get("/{id}", response_model=schemas.CourseResponse)
 def get_course(id:int, db: Session = Depends(get_db)):
     course = db.query(models.Course).filter(models.Course.id == id).first()
     if not course:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Course with id {id} not found")
-    return {"Course details": course}
+    return course
 
 @app.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id:int, db: Session = Depends(get_db)):
@@ -61,8 +57,8 @@ def delete_post(id:int, db: Session = Depends(get_db)):
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
     
-@app.put('/{id}')
-def update_post(id:int, body:Course, db: Session = Depends(get_db)):
+@app.put('/{id}', response_model=schemas.CourseResponse)
+def update_post(id:int, body:schemas.CourseCreate, db: Session = Depends(get_db)):
     course_query = db.query(models.Course).filter(models.Course.id == id)
     course = course_query.first()
     if not course:
@@ -72,4 +68,4 @@ def update_post(id:int, body:Course, db: Session = Depends(get_db)):
     course_query.update(update_course, synchronize_session=False)
     db.commit()
     db.refresh(course)
-    return {"Updated course details": course}
+    return course
