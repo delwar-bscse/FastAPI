@@ -1,5 +1,6 @@
 from pydantic import BaseModel, HttpUrl, EmailStr
 from datetime import datetime
+from typing import Optional
 
 # Define request body schema.
 class CourseCreate(BaseModel):
@@ -27,3 +28,9 @@ class UserResponse(BaseModel):
     class Config:
         orm_model = True
 
+class Token(BaseModel):
+    access_token:str
+    token_type:str
+
+class TokenData(BaseModel):
+    id:Optional[int] = None
