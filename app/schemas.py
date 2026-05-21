@@ -26,3 +26,4 @@ class UserResponse(BaseModel):
 
     class Config:
         orm_model = True
+
