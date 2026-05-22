@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl, EmailStr
+from pydantic import BaseModel, HttpUrl, EmailStr, ConfigDict
 from datetime import datetime
 from typing import Optional
 
@@ -13,8 +13,7 @@ class CourseCreate(BaseModel):
 class CourseResponse(CourseCreate):
     id:int
     creator_id:int
-    class Config:
-        orm_model = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Define request body schema.
 class UserCreate(BaseModel):
@@ -25,9 +24,11 @@ class UserResponse(BaseModel):
     id:int
     email:EmailStr
     created_at:datetime
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        orm_model = True
+class UserLogin(BaseModel):
+    access_token:str
+    user: UserResponse
 
 class Token(BaseModel):
     access_token:str
