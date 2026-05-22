@@ -12,6 +12,7 @@ class CourseCreate(BaseModel):
 # Define response body schema.
 class CourseResponse(CourseCreate):
     id:int
+    creator_id:int
     class Config:
         orm_model = True
 
