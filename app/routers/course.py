@@ -3,6 +3,7 @@ from .. import models, schemas
 from .. database import get_db
 from sqlalchemy.orm import Session
 from .. import oauth2
+from typing import Optional
 
 router = APIRouter(
   prefix="/courses"
@@ -21,8 +22,8 @@ def create_course(body:schemas.CourseCreate, db: Session = Depends(get_db), curr
 
 # Get all courses route
 @router.get("/", response_model=list[schemas.CourseResponse])
-def get_courses(db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user)):
-    courses = db.query(models.Course).filter(models.Course.creator_id == current_user.id).all()
+def get_courses(search:Optional[str] = None, limit:int = 10, page:int = 1, db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user)):
+    courses = db.query(models.Course).filter(models.Course.name.contains(search)).limit(limit).offset((page-1)*limit).all()
     return courses
 
 # Get course route
@@ -31,8 +32,6 @@ def get_course(id:int, db: Session = Depends(get_db), current_user: models.User 
     course = db.query(models.Course).filter(models.Course.id == id).first()
     if not course:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Course with id {id} not found")
-    if course.creator_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Not authorized to perform requested action")
     return course
 
 # Delete course route
